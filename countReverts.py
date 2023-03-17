@@ -138,7 +138,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--table",
         default="rates",
-        choices=["rates", "hourly"],
+        choices=["rates", "hourly", "daily"],
         help="Database table to log to (default: rates)",
     )
     parser.add_argument("-v", "--verbose", help="Be verbose", action="store_true")
