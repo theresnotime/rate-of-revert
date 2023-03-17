@@ -40,12 +40,15 @@ def log_to_db(
     end_timestamp = prepare_datetime(end_timestamp)
     sample_minutes = (datetime.strptime(end_timestamp, "%Y-%m-%d %H:%M:%S") - datetime.strptime(start_timestamp, "%Y-%m-%d %H:%M:%S")).total_seconds() / 60
     now_timestamp = prepare_datetime(datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z"))
-    sql = "INSERT INTO rates (date_added, start_timestamp, end_timestamp, sample_minutes, wiki, count) VALUES (%s, %s, %s, %s, %s, %s)"
+    sample_hash = hash(f"{start_timestamp}{end_timestamp}")
+
+    sql = "INSERT INTO rates (date_added, start_timestamp, end_timestamp, sample_minutes, sample_group_hash, wiki, count) VALUES (%s, %s, %s, %s, %s, %s, %s)"
     values = (
         now_timestamp,
         start_timestamp,
         end_timestamp,
         sample_minutes,
+        sample_hash,
         wiki,
         count
     )
