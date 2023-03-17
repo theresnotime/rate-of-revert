@@ -1,16 +1,15 @@
 import argparse
+import hashlib
 import json
-import os
 import re
 import time
 from datetime import datetime, timedelta, timezone
 
+import mysql.connector
 from termcolor import colored
 
-from eventstreams import EventStreams
-
-import mysql.connector
 import config
+from eventstreams import EventStreams
 
 DEFAULT_START = 2  # Default start time in minutes ago from now
 
@@ -30,17 +29,17 @@ def prepare_datetime(datetime: str):
     return datetime
 
 
-def log_to_db(
-        start_timestamp: str,
-        end_timestamp: str,
-        wiki: str,
-        count: int
-) -> None:
+def log_to_db(start_timestamp: str, end_timestamp: str, wiki: str, count: int) -> None:
     start_timestamp = prepare_datetime(start_timestamp)
     end_timestamp = prepare_datetime(end_timestamp)
-    sample_minutes = (datetime.strptime(end_timestamp, "%Y-%m-%d %H:%M:%S") - datetime.strptime(start_timestamp, "%Y-%m-%d %H:%M:%S")).total_seconds() / 60
-    now_timestamp = prepare_datetime(datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z"))
-    sample_hash = hash(f"{start_timestamp}{end_timestamp}")
+    sample_minutes = (
+        datetime.strptime(end_timestamp, "%Y-%m-%d %H:%M:%S")
+        - datetime.strptime(start_timestamp, "%Y-%m-%d %H:%M:%S")
+    ).total_seconds() / 60
+    now_timestamp = prepare_datetime(
+        datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z")
+    )
+    sample_hash = hashlib.md5(f"{start_timestamp}{end_timestamp}".encode())
 
     sql = "INSERT INTO rates (date_added, start_timestamp, end_timestamp, sample_minutes, sample_group_hash, wiki, count) VALUES (%s, %s, %s, %s, %s, %s, %s)"
     values = (
@@ -48,9 +47,9 @@ def log_to_db(
         start_timestamp,
         end_timestamp,
         sample_minutes,
-        sample_hash,
+        sample_hash.hexdigest(),
         wiki,
-        count
+        count,
     )
     cursor.execute(sql, values)
     db.commit()
@@ -124,7 +123,7 @@ if __name__ == "__main__":
     )
     parser.add_argument("--end", required=True, help='End timestamp (or "now")')
     parser.add_argument("--wiki", default="all", help='For wiki (or "all")')
-    parser.add_argument("--no-json", help='Don\'t return JSON', action="store_false")
+    parser.add_argument("--no-json", help="Don't return JSON", action="store_false")
     parser.add_argument("--log", help="Log to database", action="store_true")
     parser.add_argument("-v", "--verbose", help="Be verbose", action="store_true")
     parser.add_argument("--debug", help="Show debug info", action="store_true")
@@ -162,19 +161,17 @@ if __name__ == "__main__":
                     start_timestamp=start_timestamp,
                     end_timestamp=end_timestamp,
                     wiki=wiki,
-                    count=counts[wiki]
+                    count=counts[wiki],
                 )
         if args.no_json is True:
             print(json.dumps(counts))
         else:
-            for count in counts:                    
+            for count in counts:
                 print(f"{count}: {counts[count]}")
     else:
         if args.wiki not in counts:
             if args.no_json is True:
-                print(json.dumps({
-                    args.wiki: 0
-                }))
+                print(json.dumps({args.wiki: 0}))
             else:
                 print(0)
         else:
@@ -183,11 +180,9 @@ if __name__ == "__main__":
                     start_timestamp=start_timestamp,
                     end_timestamp=end_timestamp,
                     wiki=args.wiki,
-                    count=counts[args.wiki]
+                    count=counts[args.wiki],
                 )
             if args.no_json is True:
-                print(json.dumps({
-                    args.wiki: counts[args.wiki]
-                }))
+                print(json.dumps({args.wiki: counts[args.wiki]}))
             else:
                 print(counts[args.wiki])

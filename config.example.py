@@ -1,5 +1,5 @@
-DB_USER = ''
-DB_PASSWORD = ''
-DB_HOST = ''
-DB_DATABASE = ''
-DB_PORT = ''
+DB_USER = ""
+DB_PASSWORD = ""
+DB_HOST = ""
+DB_DATABASE = ""
+DB_PORT = ""
