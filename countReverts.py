@@ -29,7 +29,13 @@ def prepare_datetime(datetime: str):
     return datetime
 
 
-def log_to_db(start_timestamp: str, end_timestamp: str, wiki: str, count: int) -> None:
+def log_to_db(
+    start_timestamp: str,
+    end_timestamp: str,
+    wiki: str,
+    count: int,
+    table: str = "rates",
+) -> None:
     start_timestamp = prepare_datetime(start_timestamp)
     end_timestamp = prepare_datetime(end_timestamp)
     sample_minutes = (
@@ -41,7 +47,11 @@ def log_to_db(start_timestamp: str, end_timestamp: str, wiki: str, count: int) -
     )
     sample_hash = hashlib.md5(f"{start_timestamp}{end_timestamp}".encode())
 
-    sql = "INSERT INTO rates (date_added, start_timestamp, end_timestamp, sample_minutes, sample_group_hash, wiki, count) VALUES (%s, %s, %s, %s, %s, %s, %s)"
+    sql = (
+        "INSERT INTO "
+        + table
+        + " (date_added, start_timestamp, end_timestamp, sample_minutes, sample_group_hash, wiki, count) VALUES (%s, %s, %s, %s, %s, %s, %s)"
+    )
     values = (
         now_timestamp,
         start_timestamp,
@@ -121,10 +131,16 @@ if __name__ == "__main__":
         help=f'Start timestamp (or "default" for {DEFAULT_START}m ago)',
     )
     parser.add_argument("--end", help='End timestamp (or "now")')
-    parser.add_argument("--diff", help='Time diff in minutes')
+    parser.add_argument("--diff", help="Time diff in minutes")
     parser.add_argument("--wiki", default="all", help='For wiki (or "all")')
     parser.add_argument("--no-json", help="Don't return JSON", action="store_false")
     parser.add_argument("--log", help="Log to database", action="store_true")
+    parser.add_argument(
+        "--table",
+        default="rates",
+        choices=["rates", "hourly"],
+        help="Database table to log to (default: rates)",
+    )
     parser.add_argument("-v", "--verbose", help="Be verbose", action="store_true")
     parser.add_argument("--debug", help="Show debug info", action="store_true")
     args = parser.parse_args()
@@ -174,6 +190,7 @@ if __name__ == "__main__":
                     end_timestamp=end_timestamp,
                     wiki=wiki,
                     count=counts[wiki],
+                    table=args.table,
                 )
         if args.no_json is True:
             print(json.dumps(counts))
@@ -193,6 +210,7 @@ if __name__ == "__main__":
                     end_timestamp=end_timestamp,
                     wiki=args.wiki,
                     count=counts[args.wiki],
+                    table=args.table,
                 )
             if args.no_json is True:
                 print(json.dumps({args.wiki: counts[args.wiki]}))
