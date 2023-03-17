@@ -118,10 +118,10 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(prog="countReverts", description="x")
     parser.add_argument(
         "--start",
-        required=True,
         help=f'Start timestamp (or "default" for {DEFAULT_START}m ago)',
     )
-    parser.add_argument("--end", required=True, help='End timestamp (or "now")')
+    parser.add_argument("--end", help='End timestamp (or "now")')
+    parser.add_argument("--diff", help='Time diff in minutes')
     parser.add_argument("--wiki", default="all", help='For wiki (or "all")')
     parser.add_argument("--no-json", help="Don't return JSON", action="store_false")
     parser.add_argument("--log", help="Log to database", action="store_true")
@@ -129,23 +129,35 @@ if __name__ == "__main__":
     parser.add_argument("--debug", help="Show debug info", action="store_true")
     args = parser.parse_args()
 
-    if args.start == "default":
+    if args.diff:
         start_timestamp = (
-            (datetime.now(timezone.utc) - timedelta(minutes=DEFAULT_START))
+            (datetime.now(timezone.utc) - timedelta(minutes=int(args.diff)))
             .isoformat(timespec="seconds")
             .replace("+00:00", "Z")
         )
-    else:
-        start_timestamp = args.start
-
-    if args.end == "now":
         end_timestamp = (
             datetime.now(timezone.utc)
             .isoformat(timespec="seconds")
             .replace("+00:00", "Z")
         )
     else:
-        end_timestamp = args.end
+        if args.start == "default":
+            start_timestamp = (
+                (datetime.now(timezone.utc) - timedelta(minutes=DEFAULT_START))
+                .isoformat(timespec="seconds")
+                .replace("+00:00", "Z")
+            )
+        else:
+            start_timestamp = args.start
+
+        if args.end == "now":
+            end_timestamp = (
+                datetime.now(timezone.utc)
+                .isoformat(timespec="seconds")
+                .replace("+00:00", "Z")
+            )
+        else:
+            end_timestamp = args.end
 
     counts = count(
         start_timestamp=start_timestamp,
