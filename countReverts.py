@@ -83,7 +83,6 @@ if __name__ == "__main__":
     parser.add_argument("-v", "--verbose", help="Be verbose", action="store_true")
     parser.add_argument("--debug", help="Show debug info", action="store_true")
     args = parser.parse_args()
-    os.system("color")
 
     if args.start == "default":
         start_timestamp = (
