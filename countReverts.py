@@ -13,14 +13,16 @@ from eventstreams import EventStreams
 
 DEFAULT_START = 2  # Default start time in minutes ago from now
 
-db = mysql.connector.connect(
-    host=config.DB_HOST,
-    user=config.DB_USER,
-    password=config.DB_PASSWORD,
-    database=config.DB_DATABASE,
-    port=config.DB_PORT,
-)
-cursor = db.cursor()
+
+def get_db_connection():
+    db = mysql.connector.connect(
+        host=config.DB_HOST,
+        user=config.DB_USER,
+        password=config.DB_PASSWORD,
+        database=config.DB_DATABASE,
+        port=config.DB_PORT,
+    )
+    return db, db.cursor()
 
 
 def prepare_datetime(datetime: str):
@@ -61,6 +63,7 @@ def log_to_db(
         wiki,
         count,
     )
+    db, cursor = get_db_connection()
     cursor.execute(sql, values)
     db.commit()
 
@@ -71,6 +74,10 @@ def keep_count(change: dict, wiki_counts: dict) -> dict:
     else:
         wiki_counts[change["database"]] += 1
     return wiki_counts
+
+
+def moving_average():
+    pass
 
 
 def count(
@@ -86,7 +93,7 @@ def count(
 
     started_run = datetime.now()
     stream = EventStreams(
-        streams=["mediawiki.revision-tags-change"], since=start_timestamp, timeout=1
+        streams=["mediawiki.revision-tags-change"], since=start_timestamp, timeout=2
     )
     wiki_counts = {}
     total_count = 0
